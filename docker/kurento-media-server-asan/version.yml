@@ -1,2 +1,2 @@
 image:
-  name: kurento/kurento-media-server
+  name: ximasoft/kurento-media-server-asan
