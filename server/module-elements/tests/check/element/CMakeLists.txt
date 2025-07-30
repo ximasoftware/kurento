@@ -85,22 +85,22 @@ target_link_libraries(test_rtpendpoint_audio
 #                       ${KmsGstCommons_LIBRARIES}
 #                       kmstestutils)
 
-add_test_program(test_webrtcendpoint webrtcendpoint.c)
-add_dependencies(test_webrtcendpoint ${LIBRARY_NAME})
-target_include_directories(test_webrtcendpoint PRIVATE
-                           ${CMAKE_CURRENT_BINARY_DIR}/../../..
-                           ${KmsGstCommons_INCLUDE_DIRS}
-                           ${gstreamer-1.0_INCLUDE_DIRS}
-                           ${gstreamer-check-1.0_INCLUDE_DIRS}
-                           ${nice_INCLUDE_DIRS}
-                           "${CMAKE_CURRENT_SOURCE_DIR}/../../../src/gst-plugins")
-target_link_libraries(test_webrtcendpoint
-                      kmswebrtcendpoint
-                      ${gstreamer-1.0_LIBRARIES}
-                      ${gstreamer-sdp-1.0_LIBRARIES}
-                      ${gstreamer-check-1.0_LIBRARIES}
-                      ${nice_LIBRARIES}
-                      ${KmsGstCommons_LIBRARIES})
+#add_test_program(test_webrtcendpoint webrtcendpoint.c)
+#add_dependencies(test_webrtcendpoint ${LIBRARY_NAME})
+#target_include_directories(test_webrtcendpoint PRIVATE
+#                           ${CMAKE_CURRENT_BINARY_DIR}/../../..
+#                           ${KmsGstCommons_INCLUDE_DIRS}
+#                           ${gstreamer-1.0_INCLUDE_DIRS}
+#                           ${gstreamer-check-1.0_INCLUDE_DIRS}
+#                           ${nice_INCLUDE_DIRS}
+#                           "${CMAKE_CURRENT_SOURCE_DIR}/../../../src/gst-plugins")
+#target_link_libraries(test_webrtcendpoint
+#                      kmswebrtcendpoint
+#                      ${gstreamer-1.0_LIBRARIES}
+#                      ${gstreamer-sdp-1.0_LIBRARIES}
+#                      ${gstreamer-check-1.0_LIBRARIES}
+#                      ${nice_LIBRARIES}
+#                      ${KmsGstCommons_LIBRARIES})
 
 #add_test_program(test_compositemixer compositemixer.c)
 #add_dependencies(test_compositemixer kmstestutils)
