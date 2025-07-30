@@ -45,7 +45,7 @@ defaults:
 
 jobs:
   build:
-    runs-on: ["self-hosted", "${{ inputs.runnerGroup }}"]
+    runs-on: ubuntu-latest
     strategy:
       # Run each configuration sequentially.
       # Docker login & build fails if ran multiple times in parallel.

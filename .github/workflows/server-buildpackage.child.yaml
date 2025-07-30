@@ -53,7 +53,7 @@ defaults:
 
 jobs:
   build:
-    runs-on: ["self-hosted", "${{ inputs.runnerGroup }}"]
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         jobDistro: ${{ fromJSON(inputs.jobDistros) }}
