@@ -1911,6 +1911,38 @@ kms_base_rtp_endpoint_update_stats (KmsBaseRtpEndpoint * self,
 }
 
 static void
+on_dtmf_event (GstElement * rtpdtmfdepay, gint type, gint tone, gint volume,
+    gint duration, KmsBaseRtpEndpoint * self)
+{
+  GST_INFO_OBJECT (self,
+      "DTMF event received: tone=%d, duration=%d, volume=%d", tone, duration,
+      volume);
+}
+
+static gboolean
+is_dtmf_caps (GstCaps * caps)
+{
+  GstStructure *s;
+  const gchar *encoding_name;
+  
+  if (caps == NULL || gst_caps_is_empty (caps)) {
+    return FALSE;
+  }
+  
+  s = gst_caps_get_structure (caps, 0);
+  if (s == NULL) {
+    return FALSE;
+  }
+  
+  encoding_name = gst_structure_get_string (s, "encoding-name");
+  if (encoding_name == NULL) {
+    return FALSE;
+  }
+  
+  return g_strcmp0 (encoding_name, "telephone-event") == 0;
+}
+
+static void
 kms_base_rtp_endpoint_rtpbin_pad_added (GstElement * rtpbin, GstPad * pad,
     KmsBaseRtpEndpoint * self)
 {
@@ -1941,6 +1973,52 @@ kms_base_rtp_endpoint_rtpbin_pad_added (GstElement * rtpbin, GstPad * pad,
   GST_DEBUG_OBJECT (self,
       "New pad: %" GST_PTR_FORMAT " for linking to %" GST_PTR_FORMAT
       " with caps %" GST_PTR_FORMAT, pad, agnostic, caps);
+
+  /* Check if this is a DTMF stream */
+  if (is_dtmf_caps (caps)) {
+    GstElement *dtmf_depayloader, *fakesink;
+    
+    GST_INFO_OBJECT (self, "Detected DTMF stream on pad %s", GST_OBJECT_NAME (pad));
+    
+    /* Create DTMF depayloader to extract DTMF events */
+    dtmf_depayloader = gst_element_factory_make ("rtpdtmfdepay", NULL);
+    if (dtmf_depayloader != NULL) {
+      /* Connect signal to receive DTMF events */
+      g_signal_connect (dtmf_depayloader, "dtmf-event",
+          G_CALLBACK (on_dtmf_event), self);
+      
+      /* Create fakesink to discard the DTMF packets after logging */
+      fakesink = kms_utils_element_factory_make ("fakesink", PLUGIN_NAME);
+      g_object_set (fakesink, "async", FALSE, "sync", FALSE, NULL);
+      
+      /* Add elements to the pipeline */
+      gst_bin_add (GST_BIN (self), dtmf_depayloader);
+      gst_bin_add (GST_BIN (self), fakesink);
+      
+      /* Link the pipeline: rtpbin -> dtmf_depayloader -> fakesink */
+      gst_element_link_pads (rtpbin, GST_OBJECT_NAME (pad), dtmf_depayloader, "sink");
+      gst_element_link_pads (dtmf_depayloader, "src", fakesink, "sink");
+      
+      /* Sync with parent */
+      gst_element_sync_state_with_parent (dtmf_depayloader);
+      gst_element_sync_state_with_parent (fakesink);
+      
+      GST_INFO_OBJECT (self, "DTMF stream configured: %s -> dtmf_depayloader -> fakesink",
+          GST_OBJECT_NAME (pad));
+    } else {
+      GST_WARNING_OBJECT (self, "Failed to create rtpdtmfdepay element");
+      
+      /* Fallback: just create a fakesink to discard DTMF packets */
+      fakesink = kms_utils_element_factory_make ("fakesink", PLUGIN_NAME);
+      g_object_set (fakesink, "async", FALSE, "sync", FALSE, NULL);
+      gst_bin_add (GST_BIN (self), fakesink);
+      gst_element_link_pads (rtpbin, GST_OBJECT_NAME (pad), fakesink, "sink");
+      gst_element_sync_state_with_parent (fakesink);
+    }
+    
+    gst_caps_unref (caps);
+    goto end;
+  }
 
   depayloader = kms_base_rtp_endpoint_get_depayloader_for_caps (caps);
 
